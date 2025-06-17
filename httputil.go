@@ -2,9 +2,10 @@ package httputil
 
 import (
 	"encoding/json"
-	"iam-kevin/errors"
 	"log/slog"
 	"net/http"
+
+	"github.com/iam-kevin/go-errors"
 )
 
 func ErrorWithStatus(w http.ResponseWriter, statusCode int, err interface{}) {
