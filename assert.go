@@ -75,7 +75,7 @@ func AssertWithStatus(condition bool, status int, err interface{}) {
 //	httputil.AssertErrorIsNilWithStatus(400, err)
 func AssertErrorIsNilWithStatus(status int, err interface{}) {
 	if err != nil {
-		log.Printf("AssertionError(HTTP: %v): %s", status, err)
+		log.Printf("AssertionError(HTTP: %v): %T", status, err)
 		panic(httperror{
 			status: status,
 			err:    toErr(err),
@@ -128,16 +128,20 @@ func MiddlewareHTTPAssertionRecoverer(next http.Handler) http.Handler {
 		_, cancel := context.WithCancel(r.Context())
 		defer func() {
 			if r := recover(); r != nil {
-				if herr, ok := r.(HttpError); ok {
+				log.Printf("checking the error object %T", r)
+				if herr, ok := r.(httperror); ok {
 					if herr.Status() >= http.StatusInternalServerError {
-						InternalErrorWithStatus(w, herr.Status(), herr)
+						InternalErrorWithStatus(w, herr.Status(), &herr)
 					} else {
 						ErrorWithStatus(w, herr.Status(), herr)
 					}
 					cancel()
 				} else {
 					slog.Error("unexpected panic", "error", r)
-					panic(r)
+					if err := r.(error); err != nil {
+						InternalError(w, err)
+						// panic(r)
+					}
 				}
 			}
 		}()

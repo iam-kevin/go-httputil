@@ -25,10 +25,15 @@ import (
 func ErrorWithStatus(w http.ResponseWriter, statusCode int, err interface{}) {
 	slog.Error("failed", "status", statusCode, "error", err)
 	var err_ error
-	if e, ok := err.(error); ok {
+	switch e := err.(type) {
+	case error:
 		err_ = e
-	} else {
-		err_ = errors.New(err.(string))
+	case string:
+		err_ = errors.New(e)
+	case httperror:
+		err_ = e.Cause()
+	default:
+		err_ = errors.New("unknown error occured")
 	}
 
 	w.Header().Add("Content-Type", "application/json")
