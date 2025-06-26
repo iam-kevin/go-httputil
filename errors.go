@@ -1,7 +1,5 @@
 package httputil
 
-import "github.com/iam-kevin/go-errors"
-
 // httperror implements the HttpError interface and represents an HTTP error
 // with a status code and underlying error.
 type httperror struct {
@@ -10,24 +8,21 @@ type httperror struct {
 }
 
 // Status returns the HTTP status code associated with this error.
-func (he *httperror) Status() int {
+func (he httperror) Status() int {
 	return he.status
 }
 
 // Error returns the error message string.
 // This implements the standard error interface.
-func (he *httperror) Error() string {
+func (he httperror) Error() string {
 	return he.err.Error()
 }
 
 // Cause returns the underlying error that caused this HTTP error.
 // Returns nil if the underlying error doesn't implement ErrorWithCause.
-func (he *httperror) Cause() error {
-	if ewc, ok := he.err.(errors.ErrorWithCause); ok {
-		return ewc
-	}
-
-	return nil
+func (he httperror) Cause() error {
+	// return errors.Unwarp(he.err)
+	return he.err
 }
 
 // NewError creates a new HTTP error with the specified status code and underlying error.

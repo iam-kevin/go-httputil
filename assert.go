@@ -2,6 +2,7 @@ package httputil
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"log/slog"
 	"net/http"
@@ -131,18 +132,21 @@ func MiddlewareHTTPAssertionRecoverer(next http.Handler) http.Handler {
 				log.Printf("checking the error object %T", r)
 				if herr, ok := r.(httperror); ok {
 					if herr.Status() >= http.StatusInternalServerError {
-						InternalErrorWithStatus(w, herr.Status(), &herr)
+						InternalErrorWithStatus(w, herr.Status(), herr)
 					} else {
 						ErrorWithStatus(w, herr.Status(), herr)
 					}
-					cancel()
 				} else {
 					slog.Error("unexpected panic", "error", r)
-					if err := r.(error); err != nil {
+					err, ok := r.(error)
+					if ok && err != nil {
 						InternalError(w, err)
 						// panic(r)
+					} else {
+						InternalError(w, fmt.Errorf("unknown error object %s", r))
 					}
 				}
+				cancel()
 			}
 		}()
 
