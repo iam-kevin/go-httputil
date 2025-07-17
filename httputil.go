@@ -178,6 +178,7 @@ func InternalErrorWithStatus(w http.ResponseWriter, status int, err error) {
 	w.WriteHeader(status)
 	json.NewEncoder(w).Encode(map[string]interface{}{
 		"ok":      false,
-		"message": "internal server error",
+		"message": err.Error(),
+		// "message": "internal server error",
 	})
 }
