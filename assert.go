@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"log/slog"
 	"net/http"
 
+	"github.com/iam-kevin/go-assert"
 	"github.com/iam-kevin/go-errors"
 )
 
@@ -128,25 +128,33 @@ func MiddlewareHTTPAssertionRecoverer(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		_, cancel := context.WithCancel(r.Context())
 		defer func() {
+			defer cancel()
 			if r := recover(); r != nil {
 				log.Printf("checking the error object %T", r)
-				if herr, ok := r.(httperror); ok {
-					if herr.Status() >= http.StatusInternalServerError {
-						InternalErrorWithStatus(w, herr.Status(), herr)
-					} else {
-						ErrorWithStatus(w, herr.Status(), herr)
+				switch herr := r.(type) {
+				case httperror:
+					{
+
+						if herr.Status() >= http.StatusInternalServerError {
+							InternalErrorWithStatus(w, herr.Status(), herr)
+						} else {
+							ErrorWithStatus(w, herr.Status(), herr)
+						}
+
 					}
-				} else {
-					slog.Error("unexpected panic", "error", r)
-					err, ok := r.(error)
-					if ok && err != nil {
-						InternalError(w, err)
-						// panic(r)
-					} else {
+				case assert.AssersionError:
+					{
+						InternalError(w, &herr)
+					}
+				case error:
+					{
+						InternalError(w, herr)
+					}
+				default:
+					{
 						InternalError(w, fmt.Errorf("unknown error object %s", r))
 					}
 				}
-				cancel()
 			}
 		}()
 
