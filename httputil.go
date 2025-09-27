@@ -2,6 +2,7 @@ package httputil
 
 import (
 	"encoding/json"
+	"fmt"
 	"log/slog"
 	"net/http"
 
@@ -44,6 +45,10 @@ func ErrorWithStatus(w http.ResponseWriter, statusCode int, err interface{}) {
 	})
 }
 
+func ErrorfWithStatus(w http.ResponseWriter, statusCode int, err string, args ...interface{}) {
+	ErrorWithStatus(w, statusCode, fmt.Errorf(err, args...))
+}
+
 // Error sends a JSON error response with HTTP 500 Internal Server Error status.
 // This is a convenience function equivalent to ErrorWithStatus with status 500.
 //
@@ -52,6 +57,10 @@ func ErrorWithStatus(w http.ResponseWriter, statusCode int, err interface{}) {
 //	httputil.Error(w, "something went wrong")
 func Error(w http.ResponseWriter, err interface{}) {
 	ErrorWithStatus(w, http.StatusInternalServerError, err)
+}
+
+func Errorf(w http.ResponseWriter, err string, args ...interface{}) {
+	Error(w, fmt.Errorf(err, args...))
 }
 
 // JsonWithStatus encodes data as JSON and sends it with the specified HTTP status code.
