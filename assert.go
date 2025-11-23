@@ -23,6 +23,10 @@ func toErr(err interface{}) error {
 		{
 			er = v
 		}
+	case assert.AssersionError:
+		{
+			er = toErr(v.Unwrap())
+		}
 	default:
 		{
 			er = errors.New("missing error details")
@@ -57,7 +61,8 @@ func Assert(condition bool, err interface{}) {
 //	httputil.AssertWithStatus(user.IsActive, 403, "user account is disabled")
 func AssertWithStatus(condition bool, status int, err interface{}) {
 	if !condition {
-		log.Printf("AssertionError(HTTP: %v): %s", status, err)
+		erra := toErr(err)
+		log.Printf("AssertionError(HTTP: %v): %s", status, erra)
 		panic(httperror{
 			status: status,
 			err:    toErr(err),
@@ -73,13 +78,14 @@ func AssertWithStatus(condition bool, status int, err interface{}) {
 // Example:
 //
 //	err := validateInput(data)
-//	httputil.AssertErrorIsNilWithStatus(400, err)
+//	httputil.AssertErrorIsNilWithStatus(http.StatusBadRequest, err)
 func AssertErrorIsNilWithStatus(status int, err interface{}) {
 	if err != nil {
-		log.Printf("AssertionError(HTTP: %v): %T", status, err)
+		erra := toErr(err)
+		log.Printf("AssertionError(HTTP: %v): %s", status, erra)
 		panic(httperror{
 			status: status,
-			err:    toErr(err),
+			err:    erra,
 		})
 	}
 }
